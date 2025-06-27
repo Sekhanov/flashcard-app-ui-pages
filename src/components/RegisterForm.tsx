@@ -4,6 +4,7 @@ import {login} from '../api/auth'; // импорт функции логина
 import type {CreateUserDto} from '../types/User';
 import {useAuth} from "../hooks/UseAuth.ts";
 import axios from 'axios';
+import {Box, Button, TextField, Typography, Alert, Stack} from '@mui/material';
 
 interface RegisterFormProps {
     onSuccess?: () => void; // например, переход на главную страницу
@@ -53,49 +54,53 @@ const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="max-w-sm mx-auto space-y-3 p-4 border rounded">
-            <h2 className="text-xl font-bold text-center">Регистрация</h2>
+        <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 2 }}>
+            <Stack spacing={2}>
+                <Typography variant="h5" align="center">
+                    Регистрация
+                </Typography>
 
-            <input
-                name="name"
-                placeholder="Имя"
-                value={form.name}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-            />
-            <input
-                name="surname"
-                placeholder="Фамилия"
-                value={form.surname}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-            />
-            <input
-                name="login"
-                placeholder="Логин"
-                value={form.login}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-            />
-            <input
-                name="password"
-                type="password"
-                placeholder="Пароль"
-                value={form.password}
-                onChange={handleChange}
-                required
-                className="w-full p-2 border rounded"
-            />
+                <TextField
+                    label="Имя"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                />
+                <TextField
+                    label="Фамилия"
+                    name="surname"
+                    value={form.surname}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                />
+                <TextField
+                    label="Логин"
+                    name="login"
+                    value={form.login}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                />
+                <TextField
+                    label="Пароль"
+                    name="password"
+                    type="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    required
+                    fullWidth
+                />
 
-            {error && <p className="text-red-500">{error}</p>}
+                {error && <Alert severity="error">{error}</Alert>}
 
-            <button type="submit" className="w-full p-2 bg-blue-600 text-white rounded">
-                Зарегистрироваться
-            </button>
-        </form>
+                <Button type="submit" variant="contained" color="primary" fullWidth>
+                    Зарегистрироваться
+                </Button>
+            </Stack>
+        </Box>
     );
 }
 export default RegisterForm;

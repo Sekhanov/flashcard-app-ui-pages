@@ -1,6 +1,7 @@
 import {BrowserRouter, Routes, Route} from 'react-router-dom';
 import {AuthProvider} from './components/AuthProvider.tsx';
 import {LoginPage} from './components/LoginPage';
+// import {LoginPage} from './components/LoginPageMiu.tsx';
 import {HomePage} from './components/HomePage';
 import {PrivateRoute} from './components/PrivateRoute.tsx';
 import RegisterPage from './components/RegisterPage';

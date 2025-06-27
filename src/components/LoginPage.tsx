@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { login } from '../api/auth';
 import {useAuth} from "../hooks/UseAuth.ts";
 import { useNavigate, Link } from 'react-router-dom';
+import * as styles from './LoginPage.module.css.ts';
 
 export const LoginPage = () => {
     const [form, setForm] = useState({ login: '', password: '' });
@@ -24,27 +25,31 @@ export const LoginPage = () => {
     };
 
     return (
-        <div>
-            <form onSubmit={handleSubmit}>
+        <div className={styles.container}>
+            <form onSubmit={handleSubmit} className={styles.form}>
                 <input
                     value={form.login}
-                    onChange={e => setForm({ ...form, login: e.target.value })}
+                    onChange={(e) => setForm({ ...form, login: e.target.value })}
                     placeholder="Login"
+                    className={styles.input}
                 />
                 <input
                     type="password"
                     value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
                     placeholder="Password"
+                    className={styles.input}
                 />
-                <button type="submit">Войти</button>
+                <button type="submit" className={styles.button}>
+                    Войти
+                </button>
+                <p className={styles.registerText}>
+                    Нет аккаунта?{' '}
+                    <Link to="/register" className={styles.registerLink}>
+                        Зарегистрироваться
+                    </Link>
+                </p>
             </form>
-            <p>
-                Нет аккаунта?{' '}
-                <Link to="/register" style={{ color: 'blue', textDecoration: 'underline' }}>
-                    Зарегистрироваться
-                </Link>
-            </p>
         </div>
     );
 };
