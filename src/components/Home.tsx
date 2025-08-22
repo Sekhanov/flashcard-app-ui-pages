@@ -1,8 +1,5 @@
-import {useEffect, useState} from 'react';
-import {fetchLastSeenFlashcardSets} from '../api/flashcardSet';
 import {Link, useNavigate} from 'react-router-dom';
-import {useAuth} from '../hooks/UseAuth';
-import type {LastSeenFlashcardSetDto} from '../types/flashcardSetTypes';
+import {useGetLastSeenFlashcardSet} from "../hooks/UseFlashcardFetch.ts";
 
 /**
  * Компонент главной страницы.
@@ -12,22 +9,16 @@ import type {LastSeenFlashcardSetDto} from '../types/flashcardSetTypes';
  */
 export const Home = () => {
     const navigate = useNavigate();
-    const {token} = useAuth();
-    const [recentSets, setRecentSets] = useState<LastSeenFlashcardSetDto[]>([]);
-
-    useEffect(() => {
-        if (!token) return;
-        fetchLastSeenFlashcardSets(token).then(setRecentSets);
-    }, [token]);
+    const {data, loading} = useGetLastSeenFlashcardSet();
 
     return (
         <div>
             <h2>Recent</h2>
-            {recentSets.length === 0 ? (
+            {loading ? (
                 <p>Вы пока не открывали ни одного набора карточек.</p>
             ) : (
                 <ul>
-                    {recentSets.map(set => (
+                    {data?.map(set => (
                         <li key={set.flashcardSetId}>
                             <Link to={`/flashcard-set/${set.flashcardSetId}`}>
                                 {set.flashcardSetName}

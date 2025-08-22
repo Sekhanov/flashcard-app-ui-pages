@@ -1,13 +1,7 @@
-import {useState, useEffect, ReactNode} from 'react';
+import {ReactNode, useEffect, useState} from 'react';
 import {AuthContext} from '../hooks/UseAuth';
-
-/**
- * Тип, представляющий пользователя.
- */
-type User = {
-    id: number;
-    name: string;
-};
+import {setTokenSetter} from '../utils/tokenUpdater.ts';
+import {User} from "../types/authTypes.ts";
 
 /**
  * Провайдер контекста авторизации.
@@ -36,18 +30,26 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
             setUser(null);
         }
         setLoading(false);
+        setTokenSetter(setToken);
     }, []);
 
     /**
-     * Выполняет вход: сохраняет токен и пользователя в `localStorage` и обновляет состояние.
+     * Обновляет токен: сохраняет в `localStorage` и обновляет состояние.
      *
      * @param newToken JWT-токен
+     */
+    const updateToken = (newToken: string) => {
+        localStorage.setItem('token', newToken);
+        setToken(newToken);
+    };
+
+    /**
+     * Обновляет пользователя: сохраняет в `localStorage` и обновляет состояние.
+     *
      * @param newUser Объект пользователя
      */
-    const login = (newToken: string, newUser: User) => {
-        localStorage.setItem('token', newToken);
+    const updateUser = (newUser: User) => {
         localStorage.setItem('user', JSON.stringify(newUser));
-        setToken(newToken);
         setUser(newUser);
     };
 
@@ -62,7 +64,7 @@ export const AuthProvider = ({children}: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{token, user, loading, login, logout}}>
+        <AuthContext.Provider value={{token, user, loading, logout, updateToken, updateUser}}>
             {children}
         </AuthContext.Provider>
     );

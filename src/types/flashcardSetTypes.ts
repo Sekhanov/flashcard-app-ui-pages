@@ -5,6 +5,7 @@ export type flashcardSet = {
 };
 
 export type NewFlashcardSet = {
+    userId?: number
     name: string;
     description: string;
     cards: { term: string; definition: string }[];

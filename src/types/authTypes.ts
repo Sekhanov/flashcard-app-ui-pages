@@ -4,10 +4,16 @@
 export type User = {
     /** Уникальный идентификатор пользователя */
     id: number;
-
     /** Имя пользователя */
     name: string;
+    surname: string;
+    login: string;
 };
+
+export type AuthUser = {
+    login: string;
+    password: string;
+}
 
 /**
  * Тип, описывающий данные и методы, предоставляемые через AuthContext.
@@ -22,12 +28,8 @@ export type AuthContextType = {
     /** Флаг загрузки данных (например, при инициализации сессии) */
     loading: boolean;
 
-    /**
-     * Вход пользователя. Сохраняет токен и пользователя в контекст.
-     * @param token JWT-токен авторизации
-     * @param user Объект пользователя
-     */
-    login: (token: string, user: User) => void;
+    updateUser: (user: User) => void;
+    updateToken: (token: string) => void;
 
     /**
      * Выход пользователя. Очищает токен и данные пользователя.

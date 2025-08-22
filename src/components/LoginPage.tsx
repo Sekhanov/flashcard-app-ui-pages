@@ -1,9 +1,10 @@
 import {useState} from 'react';
-import {login as loginRequest} from '../api/auth';
-import {getCurrentUser} from '../api/user';
 import {useAuth} from '../hooks/UseAuth';
-import {useNavigate, Link as RouterLink} from 'react-router-dom';
-import {Box, Button, Paper, TextField, Typography, Link, Stack} from '@mui/material';
+import {Link as RouterLink, useNavigate} from 'react-router-dom';
+import {Box, Button, Link, Paper, Stack, TextField, Typography} from '@mui/material';
+import {UserTypes} from "../types/UserTypes.ts";
+import {login} from "../api/authentication.ts";
+import {getCurrentUser} from "../api/user.ts";
 
 /**
  * Страница входа пользователя.
@@ -15,7 +16,7 @@ import {Box, Button, Paper, TextField, Typography, Link, Stack} from '@mui/mater
 export const LoginPage = () => {
     const [form, setForm] = useState({login: '', password: ''});
     const [fieldErrors, setFieldErrors] = useState({login: false, password: false});
-    const {login: saveAuth} = useAuth();
+    const {updateUser: updateUser, updateToken: updateToken} = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
 
@@ -29,33 +30,26 @@ export const LoginPage = () => {
         setError('');
         const hasLogin = form.login.trim() !== '';
         const hasPassword = form.password.trim() !== '';
-
         setFieldErrors({
             login: !hasLogin, password: !hasPassword,
         });
-
         if (!hasLogin || !hasPassword) {
             setError('Обязательные поля не заполнены');
             return;
         }
-
         try {
-            const res = await loginRequest(form.login, form.password);
+            const token: string = await login(form);
+            updateToken(token);
+            const user: UserTypes = await getCurrentUser();
+            updateUser(user);
+            navigate('/');
 
-            if (res.token) {
-                try {
-                    const user = await getCurrentUser(res.token);
-                    saveAuth(res.token, user);
-                    navigate('/');
-                } catch (userError) {
-                    console.error('Ошибка получения пользователя:', userError);
-                    setError('Ошибка загрузки пользователя');
-                }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setError(error.message);
             } else {
-                setError(res.errorMessage || 'Ошибка входа');
+                setError('Неизвестная ошибка');
             }
-        } catch {
-            setError('Неверный логин или пароль');
         }
     };
 

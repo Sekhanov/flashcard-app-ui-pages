@@ -1,19 +1,10 @@
 import {useState} from 'react';
-import {createUser, getCurrentUser} from '../api/user';
-import {login} from '../api/auth';
 import type {CreateUserDto} from '../types/UserTypes';
 import {useAuth} from '../hooks/UseAuth';
-import axios from 'axios';
-import {Box, Button, TextField, Typography, Alert, Stack} from '@mui/material';
-
-/**
- * Свойства формы регистрации.
- *
- * @property onSuccess Функция, вызываемая при успешной регистрации и входе в систему.
- */
-interface RegisterFormProps {
-    onSuccess?: () => void;
-}
+import {Alert, Box, Button, Stack, TextField, Typography} from '@mui/material';
+import {User} from "../types/authTypes.ts";
+import {useNavigate} from "react-router-dom";
+import {login, register} from "../api/authentication.ts";
 
 /**
  * Компонент формы регистрации нового пользователя.
@@ -23,7 +14,8 @@ interface RegisterFormProps {
  *
  * @param onSuccess Функция, вызываемая при успешной регистрации и авторизации.
  */
-export const RegisterForm = ({onSuccess}: RegisterFormProps) => {
+export const RegisterForm = () => {
+    const navigate = useNavigate();
     const [form, setForm] = useState<CreateUserDto>({
         name: '',
         surname: '',
@@ -32,7 +24,7 @@ export const RegisterForm = ({onSuccess}: RegisterFormProps) => {
     });
 
     const [error, setError] = useState('');
-    const {login: saveAuth} = useAuth(); // сохраняем и токен, и пользователя
+    const {updateToken: updateToken, updateUser: updateUser} = useAuth(); // сохраняем и токен, и пользователя
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
@@ -48,37 +40,14 @@ export const RegisterForm = ({onSuccess}: RegisterFormProps) => {
             setError('Не все обязательные поля заполнены');
             return;
         }
-
         try {
-            await createUser(form);
-            const res = await login(form.login, form.password);
-
-            if (res.token) {
-                const user = await getCurrentUser(res.token);
-                saveAuth(res.token, user);
-                onSuccess?.();
-            } else {
-                setError(res.errorMessage || 'Ошибка при входе после регистрации');
-            }
+            const user: User = await register(form);
+            updateUser(user);
+            const token: string = await login(form);
+            updateToken(token);
+            navigate('/')
         } catch (error: unknown) {
-            if (axios.isAxiosError(error)) {
-                const rawMessage = error.response?.data;
-                const message = typeof rawMessage === 'string'
-                    ? rawMessage
-                    : rawMessage?.message || '';
-
-                if (
-                    message.includes('already exists') ||
-                    message.includes('unique constraint') ||
-                    message.includes('уже существует')
-                ) {
-                    setError(`Пользователь с логином ${form.login} уже существует`);
-                } else if (message) {
-                    setError(message);
-                } else {
-                    setError('Ошибка при регистрации');
-                }
-            } else if (error instanceof Error) {
+            if (error instanceof Error) {
                 setError(error.message);
             } else {
                 setError('Неизвестная ошибка');
@@ -145,14 +114,12 @@ export const RegisterForm = ({onSuccess}: RegisterFormProps) => {
                     fullWidth
                     error={isFieldEmpty('password')}
                 />
-
                 {/* Ошибка */}
                 <Box sx={{minHeight: 52}}>
                     {error && (
                         <Alert severity="error">{error}</Alert>
                     )}
                 </Box>
-
                 <Button type="submit" variant="contained" color="primary" fullWidth>
                     Зарегистрироваться
                 </Button>

@@ -1,28 +1,14 @@
-import axios from 'axios';
-import type {CreateUserDto, UserTypes} from '../types/UserTypes';
-import {API_BASE_URL} from '../Constants/BaseURL';
-import {authHeader} from '../Constants/AuthHeader';
+import {httpClient} from "./httpClient.ts";
+import {FLASHCARD_SET_URL, USERS_URL} from "../Constants/BaseURL.ts";
+import {NewFlashcardSet} from "../types/flashcardSetTypes.ts";
+import {UserTypes} from "../types/UserTypes.ts";
 
-/**
- * Регистрирует нового пользователя.
- *
- * Отправляет данные пользователя на сервер и возвращает информацию о созданном пользователе.
- *
- * @param data Данные для регистрации нового пользователя.
- * @returns Информацию о зарегистрированном пользователе.
- */
-export const createUser = (data: CreateUserDto): Promise<UserTypes> =>
-    axios.post(`${API_BASE_URL}/auth/registration`, data).then(res => res.data);
+export const createUser = async (flashcardSet: NewFlashcardSet) => {
+    await httpClient<NewFlashcardSet>(FLASHCARD_SET_URL, {
+        method: "POST",
+        body: flashcardSet
+    });
+}
 
-/**
- * Получает данные текущего пользователя.
- *
- * Отправляет запрос на сервер с токеном и возвращает информацию о пользователе.
- *
- * @param token Токен авторизации.
- * @returns Информацию о текущем пользователе.
- */
-export const getCurrentUser = (token: string): Promise<UserTypes> =>
-    axios.get(`${API_BASE_URL}/users/currentUser`, {
-        headers: authHeader(token),
-    }).then(res => res.data);
+export const getCurrentUser = async () =>
+    await httpClient<unknown, UserTypes>(`${USERS_URL}/currentUser`);

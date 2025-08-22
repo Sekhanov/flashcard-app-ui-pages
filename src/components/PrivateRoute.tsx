@@ -1,6 +1,7 @@
 import {ReactNode} from 'react';
 import {Navigate} from 'react-router-dom';
 import {useAuth} from '../hooks/UseAuth';
+import { isTokenExpired } from '../utils/authUtils';
 
 /**
  * Компонент-защита маршрута.
@@ -11,10 +12,12 @@ import {useAuth} from '../hooks/UseAuth';
  * @param children Компоненты, доступные только авторизованным пользователям.
  */
 export const PrivateRoute = ({children}: { children: ReactNode }) => {
-    const {token, loading} = useAuth();
+    const {token, loading, logout: logout} = useAuth();
 
     if (loading) return <div>Загрузка...</div>;
-    if (!token) return <Navigate to="/login" replace/>;
-
+    if (!token || isTokenExpired(token)) {
+        logout();  // сбросить данные авторизации
+        return <Navigate to="/login" replace />;
+    }
     return <>{children}</>;
 };

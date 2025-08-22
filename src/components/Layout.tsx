@@ -16,7 +16,7 @@ import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
  * Также предоставляет кнопку выхода из аккаунта.
  */
 export const Layout = () => {
-    const {logout} = useAuth();
+    const {logout: logout} = useAuth();
     const [open, setOpen] = useState(true);
 
     const toggleDrawer = () => {
