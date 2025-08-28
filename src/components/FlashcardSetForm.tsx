@@ -52,6 +52,23 @@ export const FlashcardSetForm = () => {
         setFlashcardSet({...flashcardSet, cards: flashcardSet.cards.filter((_, i) => i !== index)});
     };
 
+    const handleFileImport = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const text = reader.result as string;
+            const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+            const importedCards = lines.map(line => {
+                const separator = line.includes("-") ? "-" : line.includes(",") ? "," : line.includes(";") ? ";" : null;
+                if (!separator) return null;
+                const [term, definition] = line.split(separator).map(s => s.trim());
+                if (!term || !definition) return null;
+                return {term, definition};
+            }).filter(Boolean) as Card[];
+            setFlashcardSet(prev => ({...prev, cards: [...prev.cards, ...importedCards]}));
+        };
+        reader.readAsText(file);
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError(null);
@@ -109,6 +126,21 @@ export const FlashcardSetForm = () => {
                     rows={3}
                     margin="normal"
                 />
+
+                <Typography variant="h6" gutterBottom mt={2}>
+                    Импорт карточек
+                </Typography>
+
+                <Button variant="outlined" component="label" sx={{mb: 2}}>
+                    Импорт с файла
+                    <input
+                        type="file"
+                        hidden
+                        accept=".txt,.csv"
+                        onChange={e => e.target.files?.[0] && handleFileImport(e.target.files[0])}
+                    />
+                </Button>
+
                 <Typography variant="h6" gutterBottom mt={2}>
                     Карточки
                 </Typography>
