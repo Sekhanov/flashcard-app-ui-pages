@@ -48,6 +48,17 @@ export const FlashcardSet = () => {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [goNext, goPrev, toggleFlip]);
 
+    const speakCard = (term: string, definition: string, flipped: boolean) => {
+        const text = flipped ? definition : term;
+        const lang = flipped ? "ru-RU" : "en-US";
+
+        if (!text) return;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        speechSynthesis.cancel();
+        speechSynthesis.speak(utterance);
+    };
+
     return (
         <Box display="flex" flexDirection="column" alignItems="center" gap={2} mt={4}>
             {!id && <Typography color="error">ID набора не найден в URL</Typography>}
@@ -67,7 +78,8 @@ export const FlashcardSet = () => {
                         <Button variant="outlined" onClick={() => {}}>Learn</Button>
                         <Button variant="outlined" onClick={() => {}}>Test</Button>
                         {/* Edit */}
-                        <Button variant="contained" color="primary" onClick={() => navigate(`/flashcard-set/${id}/edit`, { state: { data } })}>Edit</Button>
+                        <Button variant="contained" color="primary" onClick={() =>
+                            navigate(`/flashcard-set/${id}/edit`, { state: { data } })}>Edit</Button>
                     </Box>
 
                     <Box>
@@ -82,6 +94,8 @@ export const FlashcardSet = () => {
                     <Box display="flex" gap={2} mt={2}>
                         <Button variant="outlined" onClick={goPrev}>Предыдущая</Button>
                         <Button variant="outlined" onClick={goNext}>Следующая</Button>
+                        <Button variant="contained" color="secondary" onClick={() =>
+                            speakCard(currentCard.term, currentCard.definition, flipped)}>🔊 Слушать</Button>
                     </Box>
                 </>
             )}
