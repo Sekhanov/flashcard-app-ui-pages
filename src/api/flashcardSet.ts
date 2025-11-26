@@ -15,3 +15,9 @@ export const updateFlashcardSet = async (flashcardSet: FlashcardSet) => {
         body: flashcardSet
     });
 };
+
+export const deleteFlashcardSet = async (id: string | number) => {
+    await httpClient(`${FLASHCARD_SET_URL}/${id}`, {
+        method: "DELETE"
+    });
+};

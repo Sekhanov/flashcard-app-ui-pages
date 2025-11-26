@@ -2,8 +2,9 @@ import {useParams, useNavigate} from 'react-router-dom';
 import {useState, useCallback, useEffect} from 'react';
 import {useGetFlashcardById} from "../hooks/UseFlashcardFetch.ts";
 import {CardFlipper} from "./CardFlipper";
-import {Box, Typography, Button} from "@mui/material";
+import {Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions} from "@mui/material";
 import {KeyboardButtons} from "../Constants/KeyboardButtons.ts";
+import {deleteFlashcardSet} from "../api/flashcardSet.ts";
 
 export const FlashcardSet = () => {
     const {id} = useParams<{ id: string }>();
@@ -12,6 +13,8 @@ export const FlashcardSet = () => {
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [flipped, setFlipped] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isDeleting] = useState(false);
 
     const cardsLength = data?.cards?.length || 0;
     const currentCard = data?.cards?.[currentIndex];
@@ -59,13 +62,22 @@ export const FlashcardSet = () => {
         speechSynthesis.speak(utterance);
     };
 
+    const handleDelete = async () => {
+        if (!id) return;
+        try {
+            await deleteFlashcardSet(id);
+            navigate('/');
+        } catch {
+            alert('Не удалось удалить набор');
+        }
+    };
+
     return (
         <Box display="flex" flexDirection="column" alignItems="center" gap={2} mt={4}>
             {!id && <Typography color="error">ID набора не найден в URL</Typography>}
             {loading && <Typography>Загрузка...</Typography>}
             {error && <Typography color="error">{error.message}</Typography>}
             {!loading && !error && !data && <Typography>Набор не найден</Typography>}
-
             {!loading && !error && data && cardsLength === 0 && <Typography>Карточки отсутствуют</Typography>}
 
             {!loading && !error && data && cardsLength > 0 && currentCard && (
@@ -74,12 +86,11 @@ export const FlashcardSet = () => {
                     <Typography>{currentIndex + 1} / {cardsLength}</Typography>
 
                     <Box display="flex" gap={2} mt={2}>
-                        {/* Заглушки */}
                         <Button variant="outlined" onClick={() => {}}>Learn</Button>
                         <Button variant="outlined" onClick={() => {}}>Test</Button>
-                        {/* Edit */}
                         <Button variant="contained" color="primary" onClick={() =>
                             navigate(`/flashcard-set/${id}/edit`, { state: { data } })}>Edit</Button>
+                        <Button variant="contained" color="error" onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
                     </Box>
 
                     <Box>
@@ -97,6 +108,20 @@ export const FlashcardSet = () => {
                         <Button variant="contained" color="secondary" onClick={() =>
                             speakCard(currentCard.term, currentCard.definition, flipped)}>🔊 Слушать</Button>
                     </Box>
+
+                    {/* Диалог подтверждения удаления */}
+                    <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                        <DialogTitle>Подтверждение удаления</DialogTitle>
+                        <DialogContent>
+                            Вы действительно хотите удалить набор карточек "{data.name}"?
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={handleDelete} color="error" disabled={isDeleting}>
+                                {isDeleting ? 'Удаление...' : 'Да'}
+                            </Button>
+                            <Button onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>Нет</Button>
+                        </DialogActions>
+                    </Dialog>
                 </>
             )}
         </Box>
