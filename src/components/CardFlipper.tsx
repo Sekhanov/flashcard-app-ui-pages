@@ -14,6 +14,7 @@ interface CardFlipperProps {
     definition: string;
     flipped: boolean;
     onFlip: () => void;
+    slideDirection?: 'next' | 'prev' | null;
 }
 
 /**
@@ -22,11 +23,11 @@ interface CardFlipperProps {
  * Показывает термин на лицевой стороне и определение на обратной.
  * Переворачивается при клике мыши или при нажатии пробела.
  */
-export const CardFlipper: React.FC<CardFlipperProps> = ({term, definition, flipped, onFlip,}) => {
+export const CardFlipper: React.FC<CardFlipperProps> = ({term, definition, flipped, onFlip, slideDirection}) => {
 
     return (
         <Box sx={styles.cardContainer} onClick={onFlip}>
-            <Box sx={styles.cardWrapper(flipped)}>
+            <Box sx={styles.cardWrapper(flipped, slideDirection)}>
                 <Card sx={styles.cardFace}>
                     <CardContent>
                         <Typography variant="h6" align="center">

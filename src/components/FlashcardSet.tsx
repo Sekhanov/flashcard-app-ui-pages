@@ -13,14 +13,16 @@ export const FlashcardSet = () => {
     const {id} = useParams<{ id: string }>();
     const {data, loading, error} = useGetFlashcardById(id || '');
     const navigate = useNavigate();
-
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [currentIndex] = useState(0);
     const [flipped, setFlipped] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [isDeleting] = useState(false);
     const [mode, setMode] = useState<'term' | 'definition'>('term');
     const cardsLength = data?.cards?.length || 0;
     const currentCard = data?.cards?.[currentIndex];
+    const [animating, setAnimating] = useState(false);
+    const [slideDirection, setSlideDirection] = useState<'next' | 'prev' | null>(null);
+    const [displayedIndex, setDisplayedIndex] = useState(0);
 
     useEffect(() => {
         if (!id) return;
@@ -32,16 +34,44 @@ export const FlashcardSet = () => {
     }, [mode]);
 
     const goNext = useCallback(() => {
-        if (!cardsLength) return;
-        setFlipped(mode === 'definition');
-        setCurrentIndex((prev) => (prev + 1) % cardsLength);
-    }, [cardsLength, mode]);
+        if (!cardsLength || animating) return;
+
+        setAnimating(true);
+        setSlideDirection('next');
+
+        // Анимация выезда
+        setTimeout(() => {
+            // Меняем индекс на следующий
+            setDisplayedIndex((prev) => (prev + 1) % cardsLength);
+            // Переключаем направление для анимации заезда
+            setSlideDirection('prev');
+
+            // Анимация заезда
+            setTimeout(() => {
+                setSlideDirection(null);
+                setAnimating(false);
+                setFlipped(mode === 'definition');
+            }, 200); // длительность анимации заезда
+        }, 150); // длительность анимации выезда
+    }, [cardsLength, animating, mode]);
 
     const goPrev = useCallback(() => {
-        if (!cardsLength) return;
-        setFlipped(mode === 'definition');
-        setCurrentIndex((prev) => (prev === 0 ? cardsLength - 1 : prev - 1));
-    }, [cardsLength, mode]);
+        if (!cardsLength || animating) return;
+
+        setAnimating(true);
+        setSlideDirection('prev');
+
+        setTimeout(() => {
+            setDisplayedIndex((prev) => (prev === 0 ? cardsLength - 1 : prev - 1));
+            setSlideDirection('next');
+
+            setTimeout(() => {
+                setSlideDirection(null);
+                setAnimating(false);
+                setFlipped(mode === 'definition');
+            }, 200);
+        }, 150);
+    }, [cardsLength, animating, mode]);
 
     const toggleFlip = useCallback(() => setFlipped((prev) => !prev), []);
 
@@ -103,7 +133,7 @@ export const FlashcardSet = () => {
             {!loading && !error && data && cardsLength > 0 && currentCard && (
                 <>
                     <Typography variant="h4" gutterBottom>{data.name}</Typography>
-                    <Typography>{currentIndex + 1} / {cardsLength}</Typography>
+                    <Typography>{displayedIndex + 1} / {cardsLength}</Typography>
 
                     <Box display="flex" gap={2} mt={2}>
                         <Button variant="outlined" onClick={() => navigate(`/flashcard-set/${id}/written`)}>Written</Button>
@@ -115,10 +145,16 @@ export const FlashcardSet = () => {
 
                     <Box>
                         <CardFlipper
-                            term={currentCard.term}
-                            definition={currentCard.definition}
+                            term={data.cards[displayedIndex].term}
+                            definition={data.cards[displayedIndex].definition}
                             flipped={flipped}
                             onFlip={toggleFlip}
+                            // Если карточка перевернута, инвертируем направление
+                            slideDirection={
+                                slideDirection && flipped
+                                    ? slideDirection === 'next' ? 'prev' : 'next'
+                                    : slideDirection
+                            }
                         />
                     </Box>
 

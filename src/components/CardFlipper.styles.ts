@@ -7,13 +7,28 @@ export const cardContainer: SxProps<Theme> = {
     cursor: "pointer"
 };
 
-export const cardWrapper = (flipped: boolean): SxProps<Theme> => ({
+export const cardWrapper = (
+    flipped: boolean,
+    slideDirection: 'next' | 'prev' | null = null
+): SxProps<Theme> => ({
     position: "relative",
     width: "100%",
     height: "100%",
     transformStyle: "preserve-3d",
-    transition: "transform 0.6s ease",
-    transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)"
+    transition: slideDirection
+        ? "transform 0.25s ease, opacity 0.25s ease"
+        : "transform 0.6s ease",
+    transform: `
+        ${flipped ? "rotateY(180deg)" : "rotateY(0deg)"}
+        ${
+        slideDirection === 'next'
+            ? "translateX(-60px)"
+            : slideDirection === 'prev'
+                ? "translateX(60px)"
+                : ""
+    }
+    `,
+    opacity: slideDirection ? 0 : 1
 });
 
 export const cardFace: SxProps<Theme> = {
