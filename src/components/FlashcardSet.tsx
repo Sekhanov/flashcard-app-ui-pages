@@ -6,12 +6,18 @@ import {Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActio
 import {KeyboardButtons} from "../Constants/KeyboardButtons.ts";
 import {deleteFlashcardSet} from "../api/flashcardSet.ts";
 import {speakText} from "../services/textToSpeech";
-import {getTermVoice, getDefVoice} from "../utils/voiceCookies";
+import {getFromCookie, saveToCookie} from "../utils/cookies.ts";
 
 export const FlashcardSet = () => {
     const {id} = useParams<{ id: string }>();
     const {data, loading, error} = useGetFlashcardById(id || '');
     const navigate = useNavigate();
+    const [isTerm, setIsTerm] = useState(true);
+    useEffect(() => {
+        if (!id) return;
+        const savedSide = getFromCookie<boolean>('card_side', id);
+        setIsTerm(savedSide ?? true);
+    }, [id]);
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [flipped, setFlipped] = useState(false);
@@ -20,6 +26,12 @@ export const FlashcardSet = () => {
 
     const cardsLength = data?.cards?.length || 0;
     const currentCard = data?.cards?.[currentIndex];
+    const toggleCardSide = () => {
+        if (!id) return;
+        const next = !isTerm;
+        setIsTerm(next);
+        saveToCookie('card_side', id, next);
+    };
 
     const goNext = useCallback(() => {
         if (!cardsLength) return;
@@ -55,16 +67,16 @@ export const FlashcardSet = () => {
 
     useEffect(() => {
         if (!currentCard || !id) return;
+        const termVoice = getFromCookie<boolean>('term_voice', id) ?? false;
+        const defVoice  = getFromCookie<boolean>('def_voice', id) ?? false;
 
-        // только если включён voice для набора
-        if (!flipped && getTermVoice(id)) {
+        if (termVoice && isTerm !== flipped) {
             speakText(currentCard.term);
         }
-
-        if (flipped && getDefVoice(id)) {
+        if (defVoice && isTerm === flipped) {
             speakText(currentCard.definition);
         }
-    }, [currentCard, flipped, id]);
+    }, [currentCard, flipped, id, isTerm]);
 
     const handleDelete = async () => {
         if (!id) return;
@@ -93,14 +105,14 @@ export const FlashcardSet = () => {
                         <Button variant="outlined" onClick={() => navigate(`/flashcard-set/${id}/written`)}>Written</Button>
                         <Button variant="outlined" onClick={() => navigate(`/flashcard-set/${id}/learn`)}>Multiple Choice</Button>
                         <Button variant="contained" color="primary" onClick={() =>
-                            navigate(`/flashcard-set/${id}/edit`, { state: { data } })}>Edit</Button>
+                            navigate(`/flashcard-set/${id}/edit`, {state: {data}})}>Edit</Button>
                         <Button variant="contained" color="error" onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
                     </Box>
 
                     <Box>
                         <CardFlipper
-                            term={currentCard.term}
-                            definition={currentCard.definition}
+                            first={isTerm ? currentCard.term : currentCard.definition}
+                            second={isTerm ? currentCard.definition : currentCard.term}
                             flipped={flipped}
                             onFlip={toggleFlip}
                         />
@@ -109,8 +121,10 @@ export const FlashcardSet = () => {
                     <Box display="flex" gap={2} mt={2}>
                         <Button variant="outlined" onClick={goPrev}>Предыдущая</Button>
                         <Button variant="outlined" onClick={goNext}>Следующая</Button>
-                        <Button variant="contained" color="secondary" onClick={() =>
-                                speakText(flipped ? currentCard.definition : currentCard.term)}>🔊 Voice</Button>
+                        <Button variant="outlined" onClick={toggleCardSide}>{isTerm ? 'to def' : 'to term'}</Button>
+                        <Button variant="contained" color="secondary" onClick={() => speakText(flipped
+                            ? (isTerm ? currentCard.definition : currentCard.term)
+                            : (isTerm ? currentCard.term : currentCard.definition))}>🔊 Voice</Button>
                     </Box>
 
                     <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

@@ -10,8 +10,8 @@ import * as styles from "./CardFlipper.styles";
  * @param onFlip - функция для переключения состояния переворота.
  */
 interface CardFlipperProps {
-    term: string;
-    definition: string;
+    first: string;
+    second: string;
     flipped: boolean;
     onFlip: () => void;
 }
@@ -22,7 +22,7 @@ interface CardFlipperProps {
  * Показывает термин на лицевой стороне и определение на обратной.
  * Переворачивается при клике мыши или при нажатии пробела.
  */
-export const CardFlipper: React.FC<CardFlipperProps> = ({term, definition, flipped, onFlip,}) => {
+export const CardFlipper: React.FC<CardFlipperProps> = ({first, second, flipped, onFlip,}) => {
 
     return (
         <Box sx={styles.cardContainer} onClick={onFlip}>
@@ -30,7 +30,7 @@ export const CardFlipper: React.FC<CardFlipperProps> = ({term, definition, flipp
                 <Card sx={styles.cardFace}>
                     <CardContent>
                         <Typography variant="h6" align="center">
-                            {term}
+                            {first}
                         </Typography>
                     </CardContent>
                 </Card>
@@ -38,7 +38,7 @@ export const CardFlipper: React.FC<CardFlipperProps> = ({term, definition, flipp
                 <Card sx={styles.cardBack}>
                     <CardContent>
                         <Typography variant="body1" align="center">
-                            {definition}
+                            {second}
                         </Typography>
                     </CardContent>
                 </Card>

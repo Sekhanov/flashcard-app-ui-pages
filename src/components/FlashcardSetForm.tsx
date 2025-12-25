@@ -1,11 +1,11 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {useAuth} from '../hooks/UseAuth';
-import {useLocation, useNavigate} from 'react-router-dom';
+import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {Box, Button, Container, IconButton, TextField, Typography, Switch, FormControlLabel} from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import type {Card, FlashcardSet} from '../types/flashcardSetTypes';
 import {createFlashcardSet, updateFlashcardSet} from "../api/flashcardSet.ts";
-import {getTermVoice, getDefVoice, setTermVoice, setDefVoice} from "../utils/voiceCookies";
+import {getFromCookie, saveToCookie} from "../utils/cookies.ts";
 
 export const FlashcardSetForm = () => {
     const {user} = useAuth();
@@ -15,9 +15,15 @@ export const FlashcardSetForm = () => {
     const isEditMode = !!propData;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const setId = propData?.id;
-    const [termVoice, setTermVoiceState] = useState(setId ? getTermVoice(setId) : false);
-    const [defVoice, setDefVoiceState] = useState(setId ? getDefVoice(setId) : false);
+    const { id: setId } = useParams<{ id: string }>();
+    const [termVoice, setTermVoiceState] = useState(false);
+    const [defVoice, setDefVoiceState] = useState(false);
+    useEffect(() => {
+        if (!setId) return;
+        setTermVoiceState(getFromCookie<boolean>('term_voice', setId) ?? false);
+        setDefVoiceState(getFromCookie<boolean>('def_voice', setId) ?? false);
+    }, [setId]);
+
     const [flashcardSet, setFlashcardSet] = useState<FlashcardSet>(() => {
         if (propData) {
             return {
@@ -139,7 +145,7 @@ export const FlashcardSetForm = () => {
                                 checked={termVoice}
                                 onChange={(_, v) => {
                                     setTermVoiceState(v);
-                                    setTermVoice(setId, v);
+                                    saveToCookie('term_voice', setId, v);
                                 }}
                             />
                         }
@@ -150,7 +156,7 @@ export const FlashcardSetForm = () => {
                                 checked={defVoice}
                                 onChange={(_, v) => {
                                     setDefVoiceState(v);
-                                    setDefVoice(setId, v);
+                                    saveToCookie('def_voice', setId, v);
                                 }}
                             />
                         }
