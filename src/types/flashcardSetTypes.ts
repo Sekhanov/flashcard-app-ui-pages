@@ -9,10 +9,13 @@ export type FlashcardSet = {
     name: string;
     description: string;
     cards: Card[];
+    ownerName?: string;
 };
 
-export interface LastSeenFlashcardSetDto {
+export type LastSeenFlashcardSetDto = {
     flashcardSetId: number;
     flashcardSetName: string;
     openedAt: string;
-}
+    ownerName: string;
+    cardsCount: number;
+};

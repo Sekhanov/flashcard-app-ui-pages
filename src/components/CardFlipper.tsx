@@ -14,6 +14,7 @@ interface CardFlipperProps {
     second: string;
     flipped: boolean;
     onFlip: () => void;
+    slideDirection?: 'next' | 'prev' | null;
 }
 
 /**
@@ -22,26 +23,28 @@ interface CardFlipperProps {
  * Показывает термин на лицевой стороне и определение на обратной.
  * Переворачивается при клике мыши или при нажатии пробела.
  */
-export const CardFlipper: React.FC<CardFlipperProps> = ({first, second, flipped, onFlip,}) => {
+export const CardFlipper: React.FC<CardFlipperProps> = ({first, second, flipped, onFlip, slideDirection}) => {
 
     return (
         <Box sx={styles.cardContainer} onClick={onFlip}>
-            <Box sx={styles.cardWrapper(flipped)}>
-                <Card sx={styles.cardFace}>
-                    <CardContent>
-                        <Typography variant="h6" align="center">
-                            {first}
-                        </Typography>
-                    </CardContent>
-                </Card>
+            <Box sx={styles.slideWrapper(slideDirection)}>
+                <Box sx={styles.flipWrapper(flipped)}>
+                    <Card sx={styles.cardFace}>
+                        <CardContent>
+                            <Typography variant="h6" align="center">
+                                {first}
+                            </Typography>
+                        </CardContent>
+                    </Card>
 
-                <Card sx={styles.cardBack}>
-                    <CardContent>
-                        <Typography variant="body1" align="center">
-                            {second}
-                        </Typography>
-                    </CardContent>
-                </Card>
+                    <Card sx={styles.cardBack}>
+                        <CardContent>
+                            <Typography variant="body1" align="center">
+                                {second}
+                            </Typography>
+                        </CardContent>
+                    </Card>
+                </Box>
             </Box>
         </Box>
     );

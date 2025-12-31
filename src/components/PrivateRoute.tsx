@@ -1,4 +1,4 @@
-import {ReactNode} from 'react';
+import {ReactNode, useEffect} from 'react';
 import {Navigate} from 'react-router-dom';
 import {useAuth} from '../hooks/UseAuth';
 import { isTokenExpired } from '../utils/authUtils';
@@ -14,10 +14,19 @@ import { isTokenExpired } from '../utils/authUtils';
 export const PrivateRoute = ({children}: { children: ReactNode }) => {
     const {token, loading, logout: logout} = useAuth();
 
-    if (loading) return <div>Загрузка...</div>;
-    if (!token || isTokenExpired(token)) {
-        logout();  // сбросить данные авторизации
-        return <Navigate to="/login" replace />;
-    }
-    return <>{children}</>;
+    const isUnauthorized = !token || isTokenExpired(token);
+
+    useEffect(() => {
+        if (!loading && isUnauthorized) {
+            logout();
+        }
+    }, [loading, isUnauthorized, logout]);
+
+    return (
+        <>
+            {loading && <div>Загрузка...</div>}
+            {!loading && isUnauthorized && <Navigate to="/login" replace />}
+            {!loading && !isUnauthorized && children}
+        </>
+    );
 };

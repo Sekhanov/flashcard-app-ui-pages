@@ -24,7 +24,7 @@ function App() {
                         <Route path="/flashcard-set/:id" element={<FlashcardSet/>}/>
                         <Route path="/flashcard-set/:id/edit" element={<FlashcardSetForm/>}/>
                         <Route path="/flashcard-set/:id/written" element={<WriteTerm />} />
-                        <Route path="/flashcard-set/:id/learn" element={<MultipleChoice />} />
+                        <Route path="/flashcard-set/:id/multipleChoice" element={<MultipleChoice />} />
                     </Route>
                 </Routes>
             </BrowserRouter>

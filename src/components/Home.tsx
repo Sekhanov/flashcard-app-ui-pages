@@ -1,5 +1,7 @@
-import {Link, useNavigate} from 'react-router-dom';
-import {useGetLastSeenFlashcardSet} from "../hooks/UseFlashcardFetch.ts";
+import { useGetLastSeenFlashcardSet } from "../hooks/UseFlashcardFetch";
+import { FlashcardSetSelectCard } from "./FlashcardSetSelectCard.tsx";
+import { useTranslation } from 'react-i18next';
+import { Box, Typography } from "@mui/material";
 
 /**
  * Компонент главной страницы.
@@ -8,28 +10,34 @@ import {useGetLastSeenFlashcardSet} from "../hooks/UseFlashcardFetch.ts";
  * Позволяет перейти к созданию нового набора.
  */
 export const Home = () => {
-    const navigate = useNavigate();
-    const {data, loading} = useGetLastSeenFlashcardSet();
+    const { t } = useTranslation();
+    const { data, loading } = useGetLastSeenFlashcardSet();
 
     return (
-        <div>
-            <h2>Recent</h2>
-            {loading ? (
-                <p>Вы пока не открывали ни одного набора карточек.</p>
-            ) : (
-                <ul>
-                    {data?.map(set => (
-                        <li key={set.flashcardSetId}>
-                            <Link to={`/flashcard-set/${set.flashcardSetId}`}>
-                                {set.flashcardSetName}
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
+        <Box>
+            <Typography variant="h4" gutterBottom>
+                {t('home.recent')}
+            </Typography>
+
+            {loading && <Typography>{t('home.loading')}</Typography>}
+
+            {!loading && (!data || data.length === 0) && (
+                <Typography>{t('home.noRecentSets')}</Typography>
             )}
-            <button onClick={() => navigate('/add-flashcard-set')} style={{marginTop: 20}}>
-                Добавить новый набор
-            </button>
-        </div>
+
+            {!loading && data && (
+                <Box display="flex" gap={2} flexWrap="wrap">
+                    {data.map(set => (
+                        <FlashcardSetSelectCard
+                            key={set.flashcardSetId}
+                            id={set.flashcardSetId}
+                            name={set.flashcardSetName}
+                            cardsCount={set.cardsCount}
+                            ownerName={set.ownerName}
+                        />
+                    ))}
+                </Box>
+            )}
+        </Box>
     );
 };

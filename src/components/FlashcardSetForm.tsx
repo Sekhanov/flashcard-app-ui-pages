@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {useAuth} from '../hooks/UseAuth';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {Box, Button, Container, IconButton, TextField, Typography, Switch, FormControlLabel} from '@mui/material';
@@ -6,8 +6,10 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import type {Card, FlashcardSet} from '../types/flashcardSetTypes';
 import {createFlashcardSet, updateFlashcardSet} from "../api/flashcardSet.ts";
 import {getFromCookie, saveToCookie} from "../utils/cookies.ts";
+import { useTranslation } from 'react-i18next';
 
 export const FlashcardSetForm = () => {
+    const {t} = useTranslation();
     const {user} = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -18,12 +20,6 @@ export const FlashcardSetForm = () => {
     const { id: setId } = useParams<{ id: string }>();
     const [termVoice, setTermVoiceState] = useState(false);
     const [defVoice, setDefVoiceState] = useState(false);
-    useEffect(() => {
-        if (!setId) return;
-        setTermVoiceState(getFromCookie<boolean>('term_voice', setId) ?? false);
-        setDefVoiceState(getFromCookie<boolean>('def_voice', setId) ?? false);
-    }, [setId]);
-
     const [flashcardSet, setFlashcardSet] = useState<FlashcardSet>(() => {
         if (propData) {
             return {
@@ -47,6 +43,13 @@ export const FlashcardSetForm = () => {
             userId: user?.id
         };
     });
+
+    useEffect(() => {
+        const idToUse = setId ?? flashcardSet.id;
+        if (!idToUse) return;
+        setTermVoiceState(getFromCookie<boolean>('term_voice', String(idToUse)) ?? false);
+        setDefVoiceState(getFromCookie<boolean>('def_voice', String(idToUse)) ?? false);
+    }, [setId, flashcardSet.id]);
 
     const handleCardChange = (index: number, field: keyof Card, value: string) => {
         const newCards = [...flashcardSet.cards];
@@ -87,12 +90,12 @@ export const FlashcardSetForm = () => {
         setError(null);
 
         if (!user?.id) {
-            setError('Пользователь не авторизован');
+            setError(t('flashcardSetForm.notAuthorized'));
             return;
         }
 
         if (!flashcardSet.name || !flashcardSet.description || !flashcardSet.cards.every(card => card.term && card.definition)) {
-            setError('Пожалуйста, заполните все обязательные поля.');
+            setError(t('flashcardSetForm.fillAllFields'));
             return;
         }
 
@@ -100,13 +103,17 @@ export const FlashcardSetForm = () => {
         try {
             if (isEditMode && flashcardSet.id) {
                 await updateFlashcardSet(flashcardSet);
+                saveToCookie('term_voice', String(flashcardSet.id), termVoice);
+                saveToCookie('def_voice', String(flashcardSet.id), defVoice);
                 navigate(`/flashcard-set/${flashcardSet.id}`);
             } else {
-                await createFlashcardSet(flashcardSet);
+                const createdSet = await createFlashcardSet(flashcardSet);
+                saveToCookie('term_voice', String(createdSet.id!), termVoice);
+                saveToCookie('def_voice', String(createdSet.id!), defVoice);
                 navigate('/');
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Произошла ошибка при сохранении набора');
+            setError(err instanceof Error ? err.message : t('flashcardSetForm.fillAllFields'));
         } finally {
             setIsSubmitting(false);
         }
@@ -115,12 +122,12 @@ export const FlashcardSetForm = () => {
     return (
         <Container maxWidth="sm">
             <Typography variant="h4" gutterBottom>
-                {isEditMode ? 'Редактировать набор карточек' : 'Создать новый набор карточек'}
+                {isEditMode ? t('flashcardSetForm.editTitle') : t('flashcardSetForm.createTitle')}
             </Typography>
             <Box component="form" onSubmit={handleSubmit} noValidate>
                 {error && <Typography color="error" sx={{mb: 2}}>{error}</Typography>}
                 <TextField
-                    label="Название"
+                    label={t('flashcardSetForm.name')}
                     value={flashcardSet.name}
                     onChange={e => setFlashcardSet({...flashcardSet, name: e.target.value})}
                     fullWidth
@@ -128,7 +135,7 @@ export const FlashcardSetForm = () => {
                     margin="normal"
                 />
                 <TextField
-                    label="Описание"
+                    label={t('flashcardSetForm.description')}
                     value={flashcardSet.description}
                     onChange={e => setFlashcardSet({...flashcardSet, description: e.target.value})}
                     fullWidth
@@ -137,40 +144,22 @@ export const FlashcardSetForm = () => {
                     margin="normal"
                 />
 
-                {isEditMode && setId && (
-                    <>
-                        <Typography variant="h6" mt={2}>Voice settings</Typography>
-                        <FormControlLabel control={
-                            <Switch
-                                checked={termVoice}
-                                onChange={(_, v) => {
-                                    setTermVoiceState(v);
-                                    saveToCookie('term_voice', setId, v);
-                                }}
-                            />
-                        }
-                                          label="Voice for terms"
-                        />
-                        <FormControlLabel control={
-                            <Switch
-                                checked={defVoice}
-                                onChange={(_, v) => {
-                                    setDefVoiceState(v);
-                                    saveToCookie('def_voice', setId, v);
-                                }}
-                            />
-                        }
-                                          label="Voice for definitions"
-                        />
-                    </>
-                )}
+                <Typography variant="h6" mt={2}>{t('flashcardSetForm.voiceSettings')}</Typography>
+                <FormControlLabel
+                    control={<Switch checked={termVoice} onChange={(_, v) => setTermVoiceState(v)} />}
+                    label={t('flashcardSetForm.voiceTerms')}
+                />
+                <FormControlLabel
+                    control={<Switch checked={defVoice} onChange={(_, v) => setDefVoiceState(v)} />}
+                    label={t('flashcardSetForm.voiceDefinitions')}
+                />
 
                 <Typography variant="h6" gutterBottom mt={2}>
-                    Импорт карточек
+                    {t('flashcardSetForm.importCards')}
                 </Typography>
 
                 <Button variant="outlined" component="label" sx={{mb: 2}}>
-                    Импорт с файла
+                    {t('flashcardSetForm.importFile')}
                     <input
                         type="file"
                         hidden
@@ -180,19 +169,19 @@ export const FlashcardSetForm = () => {
                 </Button>
 
                 <Typography variant="h6" gutterBottom mt={2}>
-                    Карточки
+                    {t('flashcardSetForm.cards')}
                 </Typography>
                 {flashcardSet.cards.map((card, i) => (
                     <Box key={i} display="flex" gap={2} alignItems="center" mb={2}>
                         <TextField
-                            label="Термин"
+                            label={t('flashcardSetForm.term')}
                             value={card.term}
                             onChange={e => handleCardChange(i, 'term', e.target.value)}
                             fullWidth
                             required
                         />
                         <TextField
-                            label="Определение"
+                            label={t('flashcardSetForm.definition')}
                             value={card.definition}
                             onChange={e => handleCardChange(i, 'definition', e.target.value)}
                             fullWidth
@@ -204,7 +193,7 @@ export const FlashcardSetForm = () => {
                     </Box>
                 ))}
                 <Button onClick={addCard} variant="outlined" sx={{mt: 1, mb: 2}}>
-                    Добавить карточку
+                    {t('flashcardSetForm.addCard')}
                 </Button>
                 <Button
                     type="submit"
@@ -213,7 +202,7 @@ export const FlashcardSetForm = () => {
                     fullWidth
                     disabled={isSubmitting}
                 >
-                    {isSubmitting ? 'Сохранение...' : isEditMode ? 'Сохранить изменения' : 'Создать набор'}
+                    {isSubmitting ? t('flashcardSetForm.saving') : isEditMode ? t('flashcardSetForm.saveChanges') : t('flashcardSetForm.createSetBtn')}
                 </Button>
             </Box>
         </Container>

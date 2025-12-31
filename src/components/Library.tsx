@@ -1,6 +1,8 @@
-import {Link} from 'react-router-dom';
-import {useAuth} from '../hooks/UseAuth';
-import {useGetFlashcardSetsByUserId} from "../hooks/UseFlashcardFetch.ts";
+import { useAuth } from '../hooks/UseAuth';
+import { useGetFlashcardSetsByUserId } from "../hooks/UseFlashcardFetch";
+import { FlashcardSetSelectCard } from "./FlashcardSetSelectCard.tsx";
+import type { FlashcardSet } from "../types/flashcardSetTypes";
+import { useTranslation } from 'react-i18next';
 
 /**
  * Компонент страницы с наборами карточек текущего пользователя.
@@ -8,19 +10,38 @@ import {useGetFlashcardSetsByUserId} from "../hooks/UseFlashcardFetch.ts";
  * Загружает и отображает список наборов, принадлежащих пользователю.
  */
 export const Library = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
-    const { data } = useGetFlashcardSetsByUserId(user?.id || undefined);
+    const { data, loading } = useGetFlashcardSetsByUserId(user?.id);
 
     return (
         <div>
-            <h2>Мои наборы</h2>
-            <ul>
-                {data?.map(set => (
-                    <li key={set.id}>
-                        <Link to={`/flashcard-set/${set.id}`}>{set.name}</Link>
-                    </li>
-                ))}
-            </ul>
+            <h2>{t('library.mySets')}</h2>
+
+            {loading && <p>{t('library.loading')}</p>}
+
+            {!loading && (!data || data.length === 0) && (
+                <p>{t('library.noSets')}</p>
+            )}
+
+            {!loading && data && (
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    {data
+                        .filter(
+                            (set): set is FlashcardSet & { id: number } =>
+                                set.id !== undefined
+                        )
+                        .map(set => (
+                            <FlashcardSetSelectCard
+                                key={set.id}
+                                id={set.id}
+                                name={set.name}
+                                cardsCount={set.cards.length}
+                                ownerName={set.ownerName}
+                            />
+                        ))}
+                </div>
+            )}
         </div>
     );
 };

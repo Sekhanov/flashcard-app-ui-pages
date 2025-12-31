@@ -7,8 +7,10 @@ import {KeyboardButtons} from "../Constants/KeyboardButtons.ts";
 import {deleteFlashcardSet} from "../api/flashcardSet.ts";
 import {speakText} from "../services/textToSpeech";
 import {getFromCookie, saveToCookie} from "../utils/cookies.ts";
+import { useTranslation } from 'react-i18next';
 
 export const FlashcardSet = () => {
+    const { t } = useTranslation();
     const {id} = useParams<{ id: string }>();
     const {data, loading, error} = useGetFlashcardById(id || '');
     const navigate = useNavigate();
@@ -18,12 +20,12 @@ export const FlashcardSet = () => {
         const savedSide = getFromCookie<boolean>('card_side', id);
         setIsTerm(savedSide ?? true);
     }, [id]);
-
-    const [currentIndex, setCurrentIndex] = useState(0);
     const [flipped, setFlipped] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [isDeleting] = useState(false);
-
+    const [animating, setAnimating] = useState(false);
+    const [slideDirection, setSlideDirection] = useState<'next' | 'prev' | null>(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
     const cardsLength = data?.cards?.length || 0;
     const currentCard = data?.cards?.[currentIndex];
     const toggleCardSide = () => {
@@ -34,16 +36,42 @@ export const FlashcardSet = () => {
     };
 
     const goNext = useCallback(() => {
-        if (!cardsLength) return;
+        if (!cardsLength || animating) return;
+
         setFlipped(false);
-        setCurrentIndex((prev) => (prev + 1) % cardsLength);
-    }, [cardsLength]);
+        setAnimating(true);
+        setSlideDirection('next');
+
+        setTimeout(() => {
+            setCurrentIndex((prev) => (prev + 1) % cardsLength);
+            setSlideDirection('prev');
+
+            setTimeout(() => {
+                setSlideDirection(null);
+                setAnimating(false);
+            }, 200);
+        }, 150);
+    }, [cardsLength, animating]);
 
     const goPrev = useCallback(() => {
-        if (!cardsLength) return;
+        if (!cardsLength || animating) return;
+
         setFlipped(false);
-        setCurrentIndex((prev) => (prev === 0 ? cardsLength - 1 : prev - 1));
-    }, [cardsLength]);
+        setAnimating(true);
+        setSlideDirection('prev');
+
+        setTimeout(() => {
+            setCurrentIndex((prev) =>
+                prev === 0 ? cardsLength - 1 : prev - 1
+            );
+            setSlideDirection('next');
+
+            setTimeout(() => {
+                setSlideDirection(null);
+                setAnimating(false);
+            }, 200);
+        }, 150);
+    }, [cardsLength, animating]);
 
     const toggleFlip = useCallback(() => setFlipped((prev) => !prev), []);
 
@@ -84,17 +112,17 @@ export const FlashcardSet = () => {
             await deleteFlashcardSet(id);
             navigate('/');
         } catch {
-            alert('Не удалось удалить набор');
+            alert(t('flashcardSet.deleteError'));
         }
     };
 
     return (
         <Box display="flex" flexDirection="column" alignItems="center" gap={2} mt={4}>
-            {!id && <Typography color="error">ID набора не найден в URL</Typography>}
-            {loading && <Typography>Загрузка...</Typography>}
+            {!id && <Typography color="error">{t('flashcardSet.idNotFound')}</Typography>}
+            {loading && <Typography>{t('flashcardSet.loading')}</Typography>}
             {error && <Typography color="error">{error.message}</Typography>}
-            {!loading && !error && !data && <Typography>Набор не найден</Typography>}
-            {!loading && !error && data && cardsLength === 0 && <Typography>Карточки отсутствуют</Typography>}
+            {!loading && !error && !data && <Typography>{t('flashcardSet.notFound')}</Typography>}
+            {!loading && !error && data && cardsLength === 0 && <Typography>{t('flashcardSet.noCards')}</Typography>}
 
             {!loading && !error && data && cardsLength > 0 && currentCard && (
                 <>
@@ -102,11 +130,11 @@ export const FlashcardSet = () => {
                     <Typography>{currentIndex + 1} / {cardsLength}</Typography>
 
                     <Box display="flex" gap={2} mt={2}>
-                        <Button variant="outlined" onClick={() => navigate(`/flashcard-set/${id}/written`)}>Written</Button>
-                        <Button variant="outlined" onClick={() => navigate(`/flashcard-set/${id}/learn`)}>Multiple Choice</Button>
-                        <Button variant="contained" color="primary" onClick={() =>
-                            navigate(`/flashcard-set/${id}/edit`, {state: {data}})}>Edit</Button>
-                        <Button variant="contained" color="error" onClick={() => setDeleteDialogOpen(true)}>Delete</Button>
+                        <Button variant="contained" color="inherit" onClick={() => navigate(`/flashcard-set/${id}/written`)}>{t('flashcardSet.written')}</Button>
+                        <Button variant="contained" color="inherit" onClick={() => navigate(`/flashcard-set/${id}/multipleChoice`)}>{t('flashcardSet.multipleChoice')}</Button>
+                        <Button variant="contained" color="inherit" onClick={() =>
+                            navigate(`/flashcard-set/${id}/edit`, { state: { data } })}>{t('flashcardSet.edit')}</Button>
+                        <Button variant="contained" color="inherit" onClick={() => setDeleteDialogOpen(true)}>{t('flashcardSet.delete')}</Button>
                     </Box>
 
                     <Box>
@@ -115,28 +143,32 @@ export const FlashcardSet = () => {
                             second={isTerm ? currentCard.definition : currentCard.term}
                             flipped={flipped}
                             onFlip={toggleFlip}
+                            slideDirection={
+                                slideDirection && flipped
+                                    ? slideDirection === 'next' ? 'prev' : 'next'
+                                    : slideDirection
+                            }
                         />
                     </Box>
-
                     <Box display="flex" gap={2} mt={2}>
-                        <Button variant="outlined" onClick={goPrev}>Предыдущая</Button>
-                        <Button variant="outlined" onClick={goNext}>Следующая</Button>
-                        <Button variant="outlined" onClick={toggleCardSide}>{isTerm ? 'to def' : 'to term'}</Button>
-                        <Button variant="contained" color="secondary" onClick={() => speakText(flipped
+                        <Button variant="contained" color="inherit" onClick={goPrev}>🡄 {t('flashcardSet.prev')}</Button>
+                        <Button variant="contained" color="inherit" onClick={goNext}>{t('flashcardSet.next')} 🡆</Button>
+                        <Button variant="contained" color="inherit" onClick={toggleCardSide}>{isTerm ? t('flashcardSet.toDef') : t('flashcardSet.toTerm')}</Button>
+                        <Button variant="contained" color="inherit" onClick={() =>speakText(flipped
                             ? (isTerm ? currentCard.definition : currentCard.term)
-                            : (isTerm ? currentCard.term : currentCard.definition))}>🔊 Voice</Button>
+                            : (isTerm ? currentCard.term : currentCard.definition))}>{t('flashcardSet.voice')} 🔊</Button>
                     </Box>
 
                     <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                        <DialogTitle>Подтверждение удаления</DialogTitle>
+                        <DialogTitle>{t('flashcardSet.deleteConfirmTitle')}</DialogTitle>
                         <DialogContent>
-                            Вы действительно хотите удалить набор карточек "{data.name}"?
+                            {t('flashcardSet.deleteConfirm', { name: data.name })}
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={handleDelete} color="error" disabled={isDeleting}>
-                                {isDeleting ? 'Удаление...' : 'Да'}
+                            <Button onClick={handleDelete} color="inherit" disabled={isDeleting}>
+                                {isDeleting ? t('flashcardSet.deleting') : t('flashcardSet.yes')}
                             </Button>
-                            <Button onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>Нет</Button>
+                            <Button onClick={() => setDeleteDialogOpen(false)} color="inherit" disabled={isDeleting}>{t('flashcardSet.no')}</Button>
                         </DialogActions>
                     </Dialog>
                 </>
