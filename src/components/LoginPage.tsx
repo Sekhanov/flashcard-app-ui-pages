@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {useAuth} from '../hooks/UseAuth';
 import {Link as RouterLink, useNavigate} from 'react-router-dom';
-import {Box, Button, Link, Paper, Stack, TextField, Typography} from '@mui/material';
+import {Box, Button, CircularProgress, Link, Paper, Stack, TextField, Typography} from '@mui/material';
 import {UserTypes} from "../types/UserTypes.ts";
 import {login} from "../api/authentication.ts";
 import {getCurrentUser} from "../api/user.ts";
@@ -19,6 +19,7 @@ export const LoginPage = () => {
     const {updateUser: updateUser, updateToken: updateToken} = useAuth();
     const navigate = useNavigate();
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     /**
      * Обрабатывает отправку формы входа.
@@ -37,18 +38,27 @@ export const LoginPage = () => {
             setError('Обязательные поля не заполнены');
             return;
         }
-        try {
-            const token: string = await login(form);
-            updateToken(token);
-            const user: UserTypes = await getCurrentUser();
-            updateUser(user);
-            navigate('/');
-
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                setError(error.message);
-            } else {
-                setError('Неизвестная ошибка');
+        setLoading(true);
+        const MAX_RETRIES = 3;
+        let attempt = 0;
+        while (attempt < MAX_RETRIES) {
+            try {
+                const token: string = await login(form);
+                updateToken(token);
+                const user: UserTypes = await getCurrentUser();
+                updateUser(user);
+                navigate('/');
+                setLoading(false);
+                return;
+            } catch (err: unknown) {
+                attempt++;
+                if (attempt >= MAX_RETRIES) {
+                    if (err instanceof Error) setError(err.message);
+                    else setError('Неизвестная ошибка');
+                    setLoading(false);
+                    return;
+                }
+                await new Promise(res => setTimeout(res, 2000));
             }
         }
     };
@@ -102,8 +112,8 @@ export const LoginPage = () => {
                         >
                             {error || 'placeholder'}
                         </Typography>
-                        <Button type="submit" variant="contained" color="inherit" fullWidth>
-                            Войти
+                        <Button type="submit" variant="contained" color="inherit" fullWidth disabled={loading} startIcon={loading ? <CircularProgress size={20} /> : null}>
+                            {loading ? 'Загрузка...' : 'Войти'}
                         </Button>
                     </Stack>
                 </form>

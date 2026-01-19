@@ -1,4 +1,4 @@
-import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import {Routes, Route, HashRouter} from 'react-router-dom';
 import {AuthProvider} from './components/AuthProvider';
 import {LoginPage} from './components/LoginPage';
 import {Home} from './components/Home';
@@ -13,7 +13,7 @@ import {MultipleChoice} from "./components/MultipleChoice.tsx";
 function App() {
     return (
         <AuthProvider>
-            <BrowserRouter>
+            <HashRouter>
                 <Routes>
                     <Route path="/login" element={<LoginPage/>}/>
                     <Route path="/register" element={<RegisterPage/>}/>
@@ -27,7 +27,7 @@ function App() {
                         <Route path="/flashcard-set/:id/multipleChoice" element={<MultipleChoice />} />
                     </Route>
                 </Routes>
-            </BrowserRouter>
+            </HashRouter>
         </AuthProvider>
     );
 }
